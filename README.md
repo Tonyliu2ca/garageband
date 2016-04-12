@@ -13,9 +13,10 @@ Downloads the free GarageBand content that is installed on first run.
         -y YYYY     Specify content release year to download that content
 ```
 
-Created by: Carl Windus
-Init Date: 2016-04-12
-Modified on: 2016-04-12 14:00
+Created by: Carl Windus<br />
+Init Date: 2016-04-12<br />
+Modified on: 2016-04-12 14:00<br />
+
 
 Licensed under the Creative Commons BY SA license:
 
