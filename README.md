@@ -15,3 +15,8 @@ Downloads the free GarageBand content that is installed on first run.
 Licensed under the Creative Commons BY SA license:
 
 https://creativecommons.org/licenses/by-sa/4.0/
+
+
+### Known issues:
+- Remote file size is pulled from the plist, this is not always the correct filesize.
+- As per above, progress bar may exceed 100% or not quite reach 100%.
