@@ -230,6 +230,7 @@ def main():
                         nargs=1,
                         dest='year',
                         metavar='YYYY',
+                        choices=['2015', '2016'],
                         help='Content released in a particular year',
                         required=False)
 
