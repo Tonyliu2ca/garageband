@@ -38,6 +38,7 @@ import shutil
 import urllib2
 from sys import exit
 from sys import stdout
+from time import sleep
 
 
 class Garageband_Content:
@@ -72,8 +73,13 @@ class Garageband_Content:
                     human_file_size = self.convert_size(float(ts))
                     header = True
                 except AttributeError:
-                    header = False
-                    human_file_size = 0
+                    try:
+                        ts = req.info().getheader('Content-Length').strip()
+                        human_file_size = self.convert_size(float(ts))
+                        header = True
+                    except AttributeError:
+                        header = False
+                        human_file_size = 0
 
                 if header:
                     ts = int(ts)
@@ -106,6 +112,7 @@ class Garageband_Content:
             print '%s' % e
             self.clean_folders()
             exit(1)
+        sleep(0.05)
 
     def list_size(self, remote_file):
         try:
@@ -218,11 +225,17 @@ class Garageband_Content:
                     pkg_size = self.list_size(remote_pkg)
                     hr_pkg_size = self.convert_size(float(pkg_size))
                     pkg_total_size.append(pkg_size)
-                    print '%s %s' % (remote_pkg, hr_pkg_size)
+                    print '%s [%s]' % (remote_pkg, hr_pkg_size)
                 elif not list_only:
                     self.download_file(remote_pkg, local_pkg)
 
         if list_only:
+            hs = []
+            for item in pkg_total_size:
+                hs.append(int(item))
+
+            ts = self.convert_size(sum(hs))
+            print 'Total: %s' % ts
             self.clean_folders()
 
 
