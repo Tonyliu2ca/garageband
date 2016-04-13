@@ -73,6 +73,7 @@ class Garageband_Content:
                     header = True
                 except AttributeError:
                     header = False
+                    human_file_size = 0
 
                 if header:
                     ts = int(ts)
@@ -95,6 +96,7 @@ class Garageband_Content:
                                                            percent,
                                                            human_file_size))
                     stdout.flush()
+                req.close()
             else:
                 req = urllib2.urlopen(remote_file)
                 with open(local_file, 'wb') as f:
@@ -105,6 +107,15 @@ class Garageband_Content:
             print '%s' % e
             self.clean_folders()
             exit(1)
+
+    def list_size(self, remote_file):
+        try:
+            req = urllib2.urlopen(remote_file)
+            ts = req.info().getheader('Content-Length').strip()
+            req.close()
+            return ts
+        except AttributeError:
+            return 0
 
     def convert_size(self, file_size, precision=2):
         suffixes = ['B', 'KB', 'MB', 'GB', 'TB']
@@ -194,8 +205,6 @@ class Garageband_Content:
 
             for item in pkg_list:
                 pkg = pkg_list[item]['DownloadName']
-                pkg_size = pkg_list[item]['DownloadSize']
-                pkg_total_size.append(pkg_list[item]['DownloadSize'])
 
                 if self.check_legacy(pkg):
                     pkg = self.strip_legacy(pkg)
@@ -207,16 +216,14 @@ class Garageband_Content:
                     local_pkg = os.path.join(local_pkg_stub, pkg)
 
                 if list_only:
-                    print '%s %s' % (
-                        remote_pkg,
-                        self.convert_size(float(pkg_size))
-                    )
+                    pkg_size = self.list_size(remote_pkg)
+                    hr_pkg_size = self.convert_size(float(pkg_size))
+                    pkg_total_size.append(pkg_size)
+                    print '%s %s' % (remote_pkg, hr_pkg_size)
                 elif not list_only:
                     self.download_file(remote_pkg, local_pkg)
 
         if list_only:
-            total_size = sum(pkg_total_size)
-            print 'Total size: %s' % self.convert_size(float(total_size))
             self.clean_folders()
 
 
