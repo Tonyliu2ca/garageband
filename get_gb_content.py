@@ -19,6 +19,8 @@ Revision notes:
             progress bar, added functions for obtaining the package file
             size, and reporting this in list output.
             Sanitised the list output to only return remote url of package.
+    1.0.2b: Fixed the rounding errors, and switched to getting the file size
+            remotely rather than from the plist.
 
 Licensed under the Creative Commons BY SA license:
     https://creativecommons.org/licenses/by-sa/4.0/
@@ -58,17 +60,23 @@ class Garageband_Content:
         if not os.path.isdir(folder):
             os.makedirs(folder)
 
-    def download_file(self, remote_file, local_file, file_size=None):
+    def download_file(self, remote_file, local_file):
         local_file = os.path.join(self.download_location, local_file)
-
-        if file_size:
-            human_file_size = self.convert_size(float(file_size))
 
         try:
             if remote_file.endswith('.pkg'):
                 f = open(local_file, 'wb')
                 req = urllib2.urlopen(remote_file)
-                total_size = int(file_size)
+                try:
+                    ts = req.info().getheader('Content-Length').strip()
+                    human_file_size = self.convert_size(float(ts))
+                    header = True
+                except AttributeError:
+                    header = False
+
+                if header:
+                    ts = int(ts)
+
                 bytes_so_far = 0
                 while True:
                     buffer = req.read(8192)
@@ -78,9 +86,12 @@ class Garageband_Content:
 
                     bytes_so_far += len(buffer)
                     f.write(buffer)
-                    percent = float(bytes_so_far) / total_size
-                    percent = round(percent*100)
-                    stdout.write("\r%s [%0.0f%% of %s]" % (remote_file,
+                    if not header:
+                        ts = bytes_so_far
+
+                    percent = float(bytes_so_far) / ts
+                    percent = round(percent*100, 2)
+                    stdout.write("\r%s [%0.2f%% of %s]" % (remote_file,
                                                            percent,
                                                            human_file_size))
                     stdout.flush()
@@ -201,8 +212,7 @@ class Garageband_Content:
                         self.convert_size(float(pkg_size))
                     )
                 elif not list_only:
-                    self.download_file(remote_pkg, local_pkg,
-                                       file_size=pkg_size)
+                    self.download_file(remote_pkg, local_pkg)
 
         if list_only:
             total_size = sum(pkg_total_size)
