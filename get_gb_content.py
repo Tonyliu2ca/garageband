@@ -5,7 +5,7 @@ Usage:
         -h          Display help
         -o <folder> Output download to specified folder.
                     Folder is created if it does not exist.
-                    Defaults to /tmp
+                    If -o is not supplied, default location is /tmp
         -l          List downloads available
         -y YYYY     Specify content release year to download that content
 
