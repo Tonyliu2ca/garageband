@@ -7,7 +7,7 @@ Downloads the free GarageBand content that is installed on first run.
 ./get_gb_content.py [-h] [-o <folder>] [-l] [-y YYYY]
         -h          Display help
         -o <folder> Output download to specified folder.
-                    Folder is created if it does not exist,
+                    Folder is created if it does not exist.
                     If -o is not supplied, default location is /tmp
         -l          List downloads available
         -y YYYY     Specify content release year to download that content
