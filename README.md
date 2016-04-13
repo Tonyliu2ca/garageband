@@ -18,5 +18,5 @@ https://creativecommons.org/licenses/by-sa/4.0/
 
 
 ### Known issues:
-- Remote file size is pulled from the plist, this is not always the correct filesize.
-- As per above, progress bar may exceed 100% or not quite reach 100%.
+- Remote file size is pulled from the plist, this is not always the correct filesize [fixed in 1.0.2b]
+- As per above, progress bar may exceed 100% or not quite reach 100% [fixed in 1.0.2b]
