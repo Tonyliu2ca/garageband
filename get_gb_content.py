@@ -96,7 +96,6 @@ class Garageband_Content:
                                                            percent,
                                                            human_file_size))
                     stdout.flush()
-                req.close()
             else:
                 req = urllib2.urlopen(remote_file)
                 with open(local_file, 'wb') as f:
