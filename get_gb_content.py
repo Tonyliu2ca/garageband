@@ -11,8 +11,8 @@ Usage:
 
 Created by: Carl Windus
 Init Date: 2016-04-12
-Modified on: 2016-04-13 08:50
-Version: 1.1.0b
+Modified on: 2016-04-14 22:36
+Version: 1.0.3b
 Revision notes:
     1.0:    Initial commit
     1.0.1b: Switched to urllib2 with better error handling and implemented
@@ -21,6 +21,15 @@ Revision notes:
             Sanitised the list output to only return remote url of package.
     1.0.2b: Fixed the rounding errors, and switched to getting the file size
             remotely rather than from the plist.
+    1.0.3b: Found a number of additional loops that aren't listed in the 2015
+            GarageBand plist file, so added those in. Also found the 2013
+            plist file, so switch to using that. This may result in a couple
+            of extraneous packages downloaded.
+            Also added a test to check if the file is already downloaded and
+            if so, skip the download.
+            When killing the script via KeyboardInterrupt, the script now
+            cleans up folders, and exits somewhat more gracefully.
+            Note - this clean up will remove any and all completed downloads!
 
 Licensed under the Creative Commons BY SA license:
     https://creativecommons.org/licenses/by-sa/4.0/
@@ -83,21 +92,24 @@ class Garageband_Content:
 
     def download_file(self, remote_file, local_file):
         try:
-            if remote_file.endswith('.pkg'):
+            if (
+                remote_file.endswith('.pkg')
+                or remote_file.endswith('.mpkg')
+            ):
                 f = open(local_file, 'wb')
                 req = urllib2.urlopen(remote_file)
                 try:
                     ts = req.info().getheader('Content-Length').strip()
-                    human_file_size = self.convert_size(float(ts))
+                    human_fs = self.convert_size(float(ts))
                     header = True
                 except AttributeError:
                     try:
                         ts = req.info().getheader('Content-Length').strip()
-                        human_file_size = self.convert_size(float(ts))
+                        human_fs = self.convert_size(float(ts))
                         header = True
                     except AttributeError:
                         header = False
-                        human_file_size = 0
+                        human_fs = 0
                 if header:
                     ts = int(ts)
                 bytes_so_far = 0
@@ -116,7 +128,7 @@ class Garageband_Content:
                     percent = round(percent*100, 2)
                     stdout.write("\r%s [%0.2f%% of %s]" % (remote_file,
                                                            percent,
-                                                           human_file_size))
+                                                           human_fs))
                     stdout.flush()
             else:
                 req = urllib2.urlopen(remote_file)
@@ -125,7 +137,7 @@ class Garageband_Content:
                     f.close()
         except (urllib2.URLError, urllib2.HTTPError) as e:
             print '%s' % e
-            self.clean_folders()
+            self.clean_up()
             exit(1)
         sleep(0.05)
 
@@ -137,6 +149,19 @@ class Garageband_Content:
             return ts
         except AttributeError:
             return 0
+
+    def file_test(self, remote_file, local_file):
+        if os.path.exists(local_file):
+            remote_size = self.list_size(remote_file)
+            remote_size = round(float(remote_size), 2)
+            local_size = os.path.getsize(local_file)
+            local_size = round(float(local_size), 2)
+            if local_size == remote_size:
+                return True
+            else:
+                return False
+        else:
+            return False
 
     def convert_size(self, file_size, precision=2):
         suffixes = ['B', 'KB', 'MB', 'GB', 'TB']
@@ -177,17 +202,23 @@ class Garageband_Content:
     def strip_legacy(self, pkg_name):
         return pkg_name.strip('../')
 
-    def clean_folders(self):
-        folders = [self.legacy_dir]
-        for item in self.resource_locations:
-            folders.append(self.resource_locations[item][0])
-        for item in folders:
+    def clean_up(self, filename=None):
+        if filename:
             try:
-                shutil.rmtree(os.path.join(
-                    self.download_location, item)
-                )
+                os.remove(filename)
             except:
                 pass
+        elif not filename:
+            folders = []
+            for item in self.resource_locations:
+                folders.append(self.resource_locations[item][0])
+            for item in folders:
+                try:
+                    path = os.path.join(self.download_location,
+                                        item)
+                    shutil.rmtree(path)
+                except:
+                    pass
 
     def grab_content(self, content_year=None, output_dir=None,
                      list_only=False):
@@ -219,14 +250,18 @@ class Garageband_Content:
                     size = self.convert_size(float(size))
                     print '%s [%s]' % (dl_url, size)
                 elif not list_only:
-                    self.download_file(dl_url, pkg_save_path)
+                    if not self.file_test(dl_url, pkg_save_path):
+                        self.download_file(dl_url, pkg_save_path)
+                    else:
+                        print 'Already downloaded %s' % dl_url
+            self.clean_up(local_plist)
         if list_only:
             hs = []
             for item in pkg_total_size:
                 hs.append(int(item))
             ts = self.convert_size(sum(hs))
             print 'Total: %s' % ts
-            self.clean_folders()
+            self.clean_up()
 
 
 def main():
@@ -267,7 +302,14 @@ def main():
     elif not args.list_pkgs:
         list_pkgs = False
 
-    gc.grab_content(content_year=year, list_only=list_pkgs, output_dir=output)
+    try:
+        gc.grab_content(content_year=year,
+                        list_only=list_pkgs,
+                        output_dir=output)
+    except KeyboardInterrupt:
+            print ''
+            gc.clean_up()
+            exit(1)
 
 
 if __name__ == '__main__':
