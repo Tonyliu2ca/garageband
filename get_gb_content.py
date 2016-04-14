@@ -47,7 +47,27 @@ class Garageband_Content:
         self.resource_locations = {
             '2016': ['lp10_ms3_content_2016', 'garageband1011.plist'],
             '2015': ['lp10_ms3_content_2015', 'garageband1010.plist'],
+            '2013': ['lp10_ms3_content_2013', 'garageband1000_en.plist'],
         }
+        self.premium_loops = {
+            '2015': [
+                'MAContent10_PremiumPreLoopsHipHop.pkg',
+                'MAContent10_PremiumPreLoopsElectroHouse.pkg',
+                'MAContent10_PremiumPreLoopsDubstep.pkg',
+                'MAContent10_PremiumPreLoopsModernRnB.pkg',
+                'MAContent10_PremiumPreLoopsTechHouse.pkg',
+                'MAContent10_PremiumPreLoopsDeepHouse.pkg',
+                'MAContent10_PremiumPreLoopsChillwave.pkg',
+                'MAContent10_PremiumPreLoopsGarageBand.pkg',
+                'MAContent10_PremiumPreLoopsJamPack1.pkg',
+                'MAContent10_PremiumPreLoopsRemixTools.pkg',
+                'MAContent10_PremiumPreLoopsRhythmSection.pkg',
+                'MAContent10_PremiumPreLoopsSymphony.pkg',
+                'MAContent10_PremiumPreLoopsWorld.pkg',
+            ]
+        }
+        self.year_choices = self.resource_locations.keys()
+        self.year_choices.sort()
         self.legacy_dir = 'lp10_ms3_content_2013'
         if not download_location:
             self.download_location = '/tmp'
@@ -62,8 +82,6 @@ class Garageband_Content:
             os.makedirs(folder)
 
     def download_file(self, remote_file, local_file):
-        local_file = os.path.join(self.download_location, local_file)
-
         try:
             if remote_file.endswith('.pkg'):
                 f = open(local_file, 'wb')
@@ -80,10 +98,8 @@ class Garageband_Content:
                     except AttributeError:
                         header = False
                         human_file_size = 0
-
                 if header:
                     ts = int(ts)
-
                 bytes_so_far = 0
                 while True:
                     buffer = req.read(8192)
@@ -107,7 +123,6 @@ class Garageband_Content:
                 with open(local_file, 'wb') as f:
                     f.write(req.read())
                     f.close()
-
         except (urllib2.URLError, urllib2.HTTPError) as e:
             print '%s' % e
             self.clean_folders()
@@ -131,12 +146,24 @@ class Garageband_Content:
             file_size = file_size/1024.0
         return '%.*f%s' % (precision, file_size, suffixes[suffix_index])
 
-    def build_pkg_list(self, local_plist):
+    def build_pkg_list(self, local_plist, content_year):
         glob_path = os.path.join(self.download_location, local_plist)
         if os.path.isfile(glob_path):
             gb_pkgs = plistlib.readPlist(glob_path)
             gb_pkgs = gb_pkgs['Packages']
-            return gb_pkgs
+            gb_pkgs_list = []
+            for item in gb_pkgs:
+                pkg = gb_pkgs[item]['DownloadName']
+                if self.check_legacy(pkg):
+                    pass
+                else:
+                    pkg = os.path.join(content_year, pkg)
+                    gb_pkgs_list.append(pkg)
+            if '2015' in content_year:
+                for item in self.premium_loops['2015']:
+                    pkg = os.path.join(content_year, item)
+                    gb_pkgs_list.append(pkg)
+            return gb_pkgs_list
         else:
             return None
 
@@ -154,7 +181,6 @@ class Garageband_Content:
         folders = [self.legacy_dir]
         for item in self.resource_locations:
             folders.append(self.resource_locations[item][0])
-
         for item in folders:
             try:
                 shutil.rmtree(os.path.join(
@@ -172,74 +198,39 @@ class Garageband_Content:
             years = self.resource_locations.keys()
         elif content_year:
             years.append(content_year)
-
+        years.sort()
         if output_dir:
             self.download_location = output_dir
-
-        if content_year is '2015':
-            self.make_paths(self.legacy_dir)
-            self.make_paths(self.resource_locations[content_year][0])
-
         for year in years:
-            self.make_paths(self.resource_locations[year][0])
-            self.make_paths(self.legacy_dir)
-
-            local_plist = os.path.join(
-                self.resource_locations[year][0],
-                self.resource_locations[year][1]
-            )
-
-            remote_plist = self.build_url([
-                self.base_url,
-                self.resource_locations[year][0],
-                self.resource_locations[year][1],
-            ])
-
-            remote_pkg_stub = self.build_url([
-                self.base_url,
-                self.resource_locations[year][0]
-            ])
-
-            local_pkg_stub = os.path.join(
-                self.download_location,
-                self.resource_locations[year][0]
-            )
-
+            cy_path = self.resource_locations[year][0]
+            cy_plist = self.resource_locations[year][1]
+            local_cy_path = os.path.join(self.download_location, cy_path)
+            local_plist = os.path.join(local_cy_path, cy_plist)
+            remote_plist = self.build_url([self.base_url, cy_path, cy_plist])
+            self.make_paths(local_cy_path)
             self.download_file(remote_plist, local_plist)
-
-            pkg_list = self.build_pkg_list(local_plist)
-
-            for item in pkg_list:
-                pkg = pkg_list[item]['DownloadName']
-
-                if self.check_legacy(pkg):
-                    pkg = self.strip_legacy(pkg)
-                    remote_pkg = self.build_url([self.base_url, pkg])
-                    local_pkg = os.path.join(self.download_location,
-                                             pkg)
-                else:
-                    remote_pkg = self.build_url([remote_pkg_stub, pkg])
-                    local_pkg = os.path.join(local_pkg_stub, pkg)
-
+            pkg_list = self.build_pkg_list(local_plist, cy_path)
+            for pkg in pkg_list:
+                dl_url = self.build_url([self.base_url, pkg])
+                pkg_save_path = os.path.join(self.download_location, pkg)
                 if list_only:
-                    pkg_size = self.list_size(remote_pkg)
-                    hr_pkg_size = self.convert_size(float(pkg_size))
-                    pkg_total_size.append(pkg_size)
-                    print '%s [%s]' % (remote_pkg, hr_pkg_size)
+                    size = self.list_size(dl_url)
+                    pkg_total_size.append(size)
+                    size = self.convert_size(float(size))
+                    print '%s [%s]' % (dl_url, size)
                 elif not list_only:
-                    self.download_file(remote_pkg, local_pkg)
-
+                    self.download_file(dl_url, pkg_save_path)
         if list_only:
             hs = []
             for item in pkg_total_size:
                 hs.append(int(item))
-
             ts = self.convert_size(sum(hs))
             print 'Total: %s' % ts
             self.clean_folders()
 
 
 def main():
+    gc = Garageband_Content()
     parser = argparse.ArgumentParser()
     parser.add_argument('-o',
                         type=str,
@@ -248,25 +239,19 @@ def main():
                         metavar='<folder>',
                         help='Download location for GarageBand content',
                         required=False)
-
     parser.add_argument('-l',
                         action='store_true',
                         dest='list_pkgs',
                         help='List content',
                         required=False)
-
     parser.add_argument('-y',
                         nargs=1,
                         dest='year',
                         metavar='YYYY',
-                        choices=['2015', '2016'],
+                        choices=gc.year_choices,
                         help='Content released in a particular year',
                         required=False)
-
     args = parser.parse_args()
-
-    gc = Garageband_Content()
-
     if args.output and len(args.output) is 1:
         output = os.path.expandvars(args.output[0])
     elif not args.output:
@@ -283,6 +268,7 @@ def main():
         list_pkgs = False
 
     gc.grab_content(content_year=year, list_only=list_pkgs, output_dir=output)
+
 
 if __name__ == '__main__':
     main()
