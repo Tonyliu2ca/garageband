@@ -18,5 +18,6 @@ https://creativecommons.org/licenses/by-sa/4.0/
 
 
 ### Known issues:
-- Remote file size is pulled from the plist, this is not always the correct filesize [fixed in 1.0.2b]
-- As per above, progress bar may exceed 100% or not quite reach 100% [fixed in 1.0.2b]
+- v1.0.3b
+    - If an output folder is supplied, the clean up routine won't delete the output folder, only the contents.
+    - If the file_test() method can't get remote package file size, then the package will be downloaded again even if it had previously been downloaded.
