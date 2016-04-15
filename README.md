@@ -3,21 +3,34 @@
 Downloads the free GarageBand content that is installed on first run.
 
 ### Usage:
+```./get_audio_content.py [-h] [-o <folder>] [-l] [-y YYYY]
+        -h  Display help
+        -p <[garageband | logicpro]>
+            Download packages for a specific app. Defaults to
+            GarageBand.
+        -o <folder>
+            Output download to specified folder.
+            Folder is created if it does not exist.
+            If -o is not supplied, default location is /tmp
+        -l  List packages available, as well as file size and total
+            size.
+        -v  Verbose output
+        -y YYYY
+            Specify content release year to download that content.
+
+Example:
+    ./get_audio_content.py -l -p logicpro -y 2015
 ```
-./get_gb_content.py [-h] [-o <folder>] [-l] [-y YYYY]
-        -h          Display help
-        -o <folder> Output download to specified folder.
-                    Folder is created if it does not exist.
-                    If -o is not supplied, default location is /tmp
-        -l          List downloads available
-        -y YYYY     Specify content release year to download that content
-```
+
 Licensed under the Creative Commons BY SA license:
+    https://creativecommons.org/licenses/by-sa/4.0/
 
-https://creativecommons.org/licenses/by-sa/4.0/
+Progress bar implementation courtesy of Fabio Trevisiol
+https://stackoverflow.com/questions/2028517/python-urllib2-progress-hook
 
+*** Disclaimer ***
+The intent of this tool is to allow a licensed user to trivially download
+audio content related to properly licensed versions of Apple software and
+the related content downloaded on first run, or after in app purchases are
+made.
 
-### Known issues:
-- v1.0.3b
-    - If an output folder is supplied, the clean up routine won't delete the output folder, only the contents.
-    - If the file_test() method can't get remote package file size, then the package will be downloaded again even if it had previously been downloaded.
