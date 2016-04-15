@@ -395,6 +395,7 @@ def main():
         get_pkg_set = args.dl_pkg_set[0]
     elif not args.dl_pkg_set:
         get_pkg_set = ac.pkg_set[0]
+
     if args.output and len(args.output) is 1:
         output = os.path.expandvars(args.output[0])
     elif not args.output:

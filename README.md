@@ -2,6 +2,9 @@
 
 Downloads additional audio content for Apple products such as GarageBand, and Logic Pro X.
 
+####Requirements
+Python 2.7.10
+
 ### Usage:
 ```
 ./get_audio_content.py [-h] [-o <folder>] [-l] [-y YYYY]
