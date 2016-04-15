@@ -80,6 +80,7 @@ import plistlib
 import shutil
 import subprocess
 import urllib2
+from sys import argv
 from sys import exit
 from sys import stdout
 from time import sleep
@@ -87,6 +88,7 @@ from time import sleep
 
 class Audio_Content:
     version = '1.0.5b'
+    name = argv[0]
 
     def __init__(self, download_location=None):
         self.proxy = urllib2.ProxyHandler()
@@ -146,41 +148,42 @@ class Audio_Content:
             if (
                 remote_file.endswith('.pkg') or remote_file.endswith('.mpkg')
             ):
-                f = open(local_file, 'wb')
-                req = self.proxy_opener.open(remote_file)
-                # req = urllib2.urlopen(remote_file)
-                try:
-                    ts = req.info().getheader('Content-Length').strip()
-                    human_fs = self.convert_size(float(ts))
-                    header = True
-                except AttributeError:
+                with open(local_file, 'wb') as f:
+                    # f = open(local_file, 'wb')
+                    req = self.proxy_opener.open(remote_file)
+                    # req = urllib2.urlopen(remote_file)
                     try:
                         ts = req.info().getheader('Content-Length').strip()
                         human_fs = self.convert_size(float(ts))
                         header = True
                     except AttributeError:
-                        header = False
-                        human_fs = 0
-                if header:
-                    ts = int(ts)
-                bytes_so_far = 0
-                while True:
-                    buffer = req.read(8192)
-                    if not buffer:
-                        print ''
-                        break
+                        try:
+                            ts = req.info().getheader('Content-Length').strip()
+                            human_fs = self.convert_size(float(ts))
+                            header = True
+                        except AttributeError:
+                            header = False
+                            human_fs = 0
+                    if header:
+                        ts = int(ts)
+                    bytes_so_far = 0
+                    while True:
+                        buffer = req.read(8192)
+                        if not buffer:
+                            print ''
+                            break
 
-                    bytes_so_far += len(buffer)
-                    f.write(buffer)
-                    if not header:
-                        ts = bytes_so_far
+                        bytes_so_far += len(buffer)
+                        f.write(buffer)
+                        if not header:
+                            ts = bytes_so_far
 
-                    percent = float(bytes_so_far) / ts
-                    percent = round(percent*100, 2)
-                    stdout.write("\r%s [%0.2f%% of %s]" % (remote_file,
-                                                           percent,
-                                                           human_fs))
-                    stdout.flush()
+                        percent = float(bytes_so_far) / ts
+                        percent = round(percent*100, 2)
+                        stdout.write("\r%s [%0.2f%% of %s]" % (remote_file,
+                                                               percent,
+                                                               human_fs))
+                        stdout.flush()
             else:
                 # req = urllib2.urlopen(remote_file)
                 req = self.proxy_opener.open(remote_file)
@@ -305,6 +308,7 @@ class Audio_Content:
         if output_dir:
             self.download_location = os.path.join(output_dir, package_set)
             if verbosity:
+                print '%s - version: %s' % (self.name, self.version)
                 print 'Content downloads to:\n\t%s' % self.download_location
                 print 'Downloading remote plist:'
                 for rp in plists_to_get:
