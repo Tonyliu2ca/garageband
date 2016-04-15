@@ -3,7 +3,8 @@
 Downloads the free GarageBand content that is installed on first run.
 
 ### Usage:
-```./get_audio_content.py [-h] [-o <folder>] [-l] [-y YYYY]
+```
+./get_audio_content.py [-h] [-o <folder>] [-l] [-y YYYY]
         -h  Display help
         -p <[garageband | logicpro]>
             Download packages for a specific app. Defaults to
