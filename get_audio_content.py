@@ -86,6 +86,8 @@ from time import sleep
 
 
 class Audio_Content:
+    version = '1.0.5b'
+
     def __init__(self, download_location=None):
         self.proxy = urllib2.ProxyHandler()
         self.proxy_opener = urllib2.build_opener(self.proxy)
