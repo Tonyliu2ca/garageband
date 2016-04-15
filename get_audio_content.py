@@ -18,8 +18,12 @@ Usage:
         -y YYYY
             Specify content release year to download that content.
 
-Example:
+Examples:
     ./get_audio_content.py -l -p logicpro -y 2015
+        Lists all Logic Pro X content released in 2015.
+
+    ./get_audio_content.py -y 2013 2015
+        Downloads all GarageBand content for 2013, and 2015.
 
 Created by: Carl Windus
 Init Date: 2016-04-12
@@ -51,6 +55,9 @@ Revision notes:
             Added -v flag for verbose output. Default is to be quiet, this
             means list output will not check remote file size unless the -v
             flag is passed.
+    1.0.5b  Added simple proxy code for testing. Mutually exclusive options
+            for -o and -l. Clean up temp contents when KeyboardInterrupt is
+            triggered during list operation.
 
 Licensed under the Creative Commons BY SA license:
     https://creativecommons.org/licenses/by-sa/4.0/
@@ -347,6 +354,7 @@ class Audio_Content:
 def main():
     ac = Audio_Content()
     parser = argparse.ArgumentParser()
+    group = parser.add_mutually_exclusive_group()
     parser.add_argument('-pkgs',
                         type=str,
                         nargs=1,
@@ -355,18 +363,18 @@ def main():
                         choices=ac.pkg_set,
                         help='Specify a package set to download.',
                         required=False)
-    parser.add_argument('-o',
-                        type=str,
-                        nargs=1,
-                        dest='output',
-                        metavar='<folder>',
-                        help='Download location for GarageBand content',
-                        required=False)
-    parser.add_argument('-l',
-                        action='store_true',
-                        dest='list_pkgs',
-                        help='List content',
-                        required=False)
+    group.add_argument('-o',
+                       type=str,
+                       nargs=1,
+                       dest='output',
+                       metavar='<folder>',
+                       help='Download location for GarageBand content',
+                       required=False)
+    group.add_argument('-l',
+                       action='store_true',
+                       dest='list_pkgs',
+                       help='List content',
+                       required=False)
     parser.add_argument('-v',
                         action='store_true',
                         dest='verbose',
@@ -413,6 +421,8 @@ def main():
                         verbosity=verbose)
     except KeyboardInterrupt:
             print ''
+            if list_pkgs:
+                ac.clean_up()
             exit(1)
 
 
