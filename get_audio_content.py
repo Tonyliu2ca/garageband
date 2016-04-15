@@ -80,6 +80,8 @@ from time import sleep
 
 class Audio_Content:
     def __init__(self, download_location=None):
+        self.proxy = urllib2.ProxyHandler()
+        self.proxy_opener = urllib2.build_opener(self.proxy)
         self.base_url = 'http://audiocontentdownload.apple.com'
         self.cy_stub = 'lp10_ms3_content_'
         self.resource_locations = {
@@ -136,7 +138,8 @@ class Audio_Content:
                 remote_file.endswith('.pkg') or remote_file.endswith('.mpkg')
             ):
                 f = open(local_file, 'wb')
-                req = urllib2.urlopen(remote_file)
+                req = self.proxy_opener.open(remote_file)
+                # req = urllib2.urlopen(remote_file)
                 try:
                     ts = req.info().getheader('Content-Length').strip()
                     human_fs = self.convert_size(float(ts))
@@ -170,7 +173,8 @@ class Audio_Content:
                                                            human_fs))
                     stdout.flush()
             else:
-                req = urllib2.urlopen(remote_file)
+                # req = urllib2.urlopen(remote_file)
+                req = self.proxy_opener.open(remote_file)
                 with open(local_file, 'wb') as f:
                     f.write(req.read())
                     f.close()
@@ -409,7 +413,6 @@ def main():
                         verbosity=verbose)
     except KeyboardInterrupt:
             print ''
-            ac.clean_up()
             exit(1)
 
 
