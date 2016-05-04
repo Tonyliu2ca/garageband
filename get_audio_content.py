@@ -402,7 +402,7 @@ def main():
                         dest='dl_pkg_set',
                         metavar='<pkg set>',
                         choices=ac.pkg_set,
-                        help='app to download content for.',
+                        help='app to download content for - %s.' % ac.pkg_set,
                         required=False)
     group.add_argument('-o', '--output',
                        type=str,
@@ -435,9 +435,9 @@ def main():
     elif not args.dl_pkg_set:
         get_pkg_set = ac.pkg_set[0]
 
-    if args.output and len(args.output) is 1:
-        output = os.path.expandvars(args.output[0])
-    elif not args.output:
+    if args.out and len(args.out) is 1:
+        output = os.path.expandvars(args.out[0])
+    elif not args.out:
         output = ac.download_location
 
     if args.year:
