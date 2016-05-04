@@ -358,41 +358,76 @@ class Audio_Content:
 
 
 def main():
+    class SaneUsageFormat(argparse.HelpFormatter):
+        """
+            for matt wilkie on SO
+            http://stackoverflow.com/questions/9642692/argparse-help-without-duplicate-allcaps/9643162#9643162
+        """
+        def _format_action_invocation(self, action):
+            if not action.option_strings:
+                default = self._get_default_metavar_for_positional(action)
+                metavar, = self._metavar_formatter(action, default)(1)
+                return metavar
+
+            else:
+                parts = []
+
+                # if the Optional doesn't take a value, format is:
+                #    -s, --long
+                if action.nargs == 0:
+                    parts.extend(action.option_strings)
+
+                # if the Optional takes a value, format is:
+                #    -s ARGS, --long ARGS
+                else:
+                    default = self._get_default_metavar_for_optional(action)
+                    args_string = self._format_args(action, default)
+                    for option_string in action.option_strings:
+                        parts.append(option_string)
+
+                    return '%s %s' % (', '.join(parts), args_string)
+
+                return ', '.join(parts)
+
+        def _get_default_metavar_for_optional(self, action):
+            return action.dest.upper()
+
+    parser = argparse.ArgumentParser(formatter_class=SaneUsageFormat)
+
     ac = Audio_Content()
-    parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group()
-    parser.add_argument('-pkgs',
+    parser.add_argument('-p', '--pkgs',
                         type=str,
                         nargs=1,
                         dest='dl_pkg_set',
-                        metavar='<package set>',
+                        metavar='<pkg set>',
                         choices=ac.pkg_set,
-                        help='Specify a package set to download.',
+                        help='app to download content for.',
                         required=False)
-    group.add_argument('-o',
+    group.add_argument('-o', '--output',
                        type=str,
                        nargs=1,
-                       dest='output',
+                       dest='out',
                        metavar='<folder>',
-                       help='Download location for GarageBand content',
+                       help='download location.',
                        required=False)
-    group.add_argument('-l',
+    group.add_argument('-l', '--list',
                        action='store_true',
                        dest='list_pkgs',
-                       help='List content',
+                       help='list content',
                        required=False)
-    parser.add_argument('-v',
+    parser.add_argument('-v', '--verbose',
                         action='store_true',
                         dest='verbose',
-                        help='Verbose output',
+                        help='verbose output',
                         required=False)
 
-    parser.add_argument('-y',
+    parser.add_argument('-y', '--year',
                         nargs='*',
                         dest='year',
                         metavar='YYYY',
                         choices=ac.year_choices,
-                        help='Content released in a particular year',
+                        help='content released in year',
                         required=False)
     args = parser.parse_args()
     if args.dl_pkg_set:
