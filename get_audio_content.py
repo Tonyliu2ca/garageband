@@ -98,6 +98,7 @@ class Audio_Content:
         self.resource_locations = {
             '2016': [
                 'garageband1011.plist',
+                'garageband1012.plist',
                 'logicpro1022.plist',
                 ],
             '2015': [
