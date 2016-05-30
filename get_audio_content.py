@@ -24,33 +24,7 @@ Example:
 Created by: Carl Windus
 Init Date: 2016-04-12
 Modified on: 2016-04-14 22:36
-Version: 1.0.4b
-Revision notes:
-    1.0:    Initial commit
-    1.0.1b: Switched to urllib2 with better error handling and implemented
-            progress bar, added functions for obtaining the package file
-            size, and reporting this in list output.
-            Sanitised the list output to only return remote url of package.
-    1.0.2b: Fixed the rounding errors, and switched to getting the file size
-            remotely rather than from the plist.
-    1.0.3b: Found a number of additional loops that aren't listed in the 2015
-            GarageBand plist file, so added those in. Also found the 2013
-            plist file, so switch to using that. This may result in a couple
-            of extraneous packages downloaded.
-            Also added a test to check if the file is already downloaded and
-            if so, skip the download.
-            When killing the script via KeyboardInterrupt, the script now
-            cleans up folders, and exits somewhat more gracefully.
-            Note - this clean up will remove any and all completed downloads!
-    1.0.4b  Added support for Logic Pro X audio content. Ignores duplicate
-            package paths based on URL, as GarageBand and Logic Pro X share
-            similar packages for content.
-            Added the -p flag to choose between either 'garageband' or
-            'logicpro' content. If the -p flag is not supplied, defaults to
-            GarageBand, as the Logic Pro X content is crazy big.
-            Added -v flag for verbose output. Default is to be quiet, this
-            means list output will not check remote file size unless the -v
-            flag is passed.
+Version: 1.0.7b
 
 Licensed under the Creative Commons BY SA license:
     https://creativecommons.org/licenses/by-sa/4.0/
@@ -342,9 +316,44 @@ class Audio_Content:
 
 
 def main():
+    class SaneUsageFormat(argparse.HelpFormatter):
+        """
+            for matt wilkie on SO
+            http://stackoverflow.com/questions/9642692/argparse-help-without-duplicate-allcaps/9643162#9643162
+        """
+        def _format_action_invocation(self, action):
+            if not action.option_strings:
+                default = self._get_default_metavar_for_positional(action)
+                metavar, = self._metavar_formatter(action, default)(1)
+                return metavar
+
+            else:
+                parts = []
+
+                # if the Optional doesn't take a value, format is:
+                #    -s, --long
+                if action.nargs == 0:
+                    parts.extend(action.option_strings)
+
+                # if the Optional takes a value, format is:
+                #    -s ARGS, --long ARGS
+                else:
+                    default = self._get_default_metavar_for_optional(action)
+                    args_string = self._format_args(action, default)
+                    for option_string in action.option_strings:
+                        parts.append(option_string)
+
+                    return '%s %s' % (', '.join(parts), args_string)
+
+                return ', '.join(parts)
+
+        def _get_default_metavar_for_optional(self, action):
+            return action.dest.upper()
+
+    parser = argparse.ArgumentParser(formatter_class=SaneUsageFormat)
     ac = Audio_Content()
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-pkgs',
+
+    parser.add_argument('-p', '--pkgs',
                         type=str,
                         nargs=1,
                         dest='dl_pkg_set',
@@ -352,25 +361,25 @@ def main():
                         choices=ac.pkg_set,
                         help='Specify a package set to download.',
                         required=False)
-    parser.add_argument('-o',
+    parser.add_argument('-o', '--output',
                         type=str,
                         nargs=1,
                         dest='output',
                         metavar='<folder>',
                         help='Download location for GarageBand content',
                         required=False)
-    parser.add_argument('-l',
+    parser.add_argument('-l', '--list',
                         action='store_true',
                         dest='list_pkgs',
                         help='List content',
                         required=False)
-    parser.add_argument('-v',
+    parser.add_argument('-v', '--verbose',
                         action='store_true',
                         dest='verbose',
                         help='Verbose output',
                         required=False)
 
-    parser.add_argument('-y',
+    parser.add_argument('-y', '--year',
                         nargs='*',
                         dest='year',
                         metavar='YYYY',
