@@ -383,7 +383,14 @@ def main():
     elif not args.dl_pkg_set:
         get_pkg_set = ac.pkg_set[0]
     if args.output and len(args.output) is 1:
-        output = os.path.expandvars(args.output[0])
+        path = args.output[0]
+        path = os.path.expandvars(path)
+        if path.startswith('~'):
+            output = os.path.expanduser(path)
+        elif path.startswith('.'):
+            output = os.path.realpath(path)
+        else:
+            output = path
     elif not args.output:
         output = ac.download_location
 
