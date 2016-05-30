@@ -437,7 +437,15 @@ def main():
         get_pkg_set = ac.pkg_set[0]
 
     if args.out and len(args.out) is 1:
-        output = os.path.expandvars(args.out[0])
+        if args.output and len(args.output) is 1:
+            path = args.output[0]
+            path = os.path.expandvars(path)
+            if path.startswith('~'):
+                output = os.path.expanduser(path)
+            elif path.startswith('.'):
+                output = os.path.realpath(path)
+            else:
+                output = path
     elif not args.out:
         output = ac.download_location
 
@@ -464,8 +472,6 @@ def main():
                         verbosity=verbose)
     except KeyboardInterrupt:
             print ''
-            if list_pkgs:
-                ac.clean_up()
             exit(1)
 
 
